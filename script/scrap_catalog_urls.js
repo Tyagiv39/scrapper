@@ -16,13 +16,16 @@ var conn_catalog_urls = conn_pg_catalog_urls.model('catalog_urls', schema_catalo
 
 //*******************************************************************************************************
 
+
+SELECTOR_1 = "#ColumnRail_thd_20cf > div > div > nav > ul > li > a";
+SELECTOR_2 = "#container > div > div> div > div > div > div > div > div> nav > ul > li> a";
 let allUrls = [];
 const scrap = () => new Promise((resolve, reject) => {
     var urls = ["https://www.homedepot.com/b/Home-Decor-Home-Accents/N-5yc1vZar58",
         "https://www.homedepot.com/b/Home-Decor-Bedding-Bath/N-5yc1vZci04",
-        //"https://www.homedepot.com/b/Home-Decor-Wall-Decor/N-5yc1vZar8x",
-        //"https://www.homedepot.com/b/Lighting/N-5yc1vZbvn5",
-        //"https://www.homedepot.com/b/Flooring-Rugs-Area-Rugs/N-5yc1vZarjg",
+        "https://www.homedepot.com/b/Home-Decor-Wall-Decor/N-5yc1vZar8x",
+        "https://www.homedepot.com/b/Lighting/N-5yc1vZbvn5",
+        "https://www.homedepot.com/b/Flooring-Rugs-Area-Rugs/N-5yc1vZarjg",
         "https://www.homedepot.com/b/Window-Treatments/N-5yc1vZar4w",
         "https://www.homedepot.com/b/Kitchen-Kitchenware/N-5yc1vZaqzo",
         "https://www.homedepot.com/b/Kitchen-Tableware-Bar/N-5yc1vZc4c1",
@@ -42,28 +45,62 @@ const scrap = () => new Promise((resolve, reject) => {
         }
     });
 
+    
     function processUrl(url, callback) {
-        request(url, function(err, resp, body) {
-            if (err) callback(err);
-            const $ = cheerio.load(body);
-            $("#ColumnRail_thd_20cf > div > div > nav > ul > li > a").each(function(i, element) {
-                const sul = $(element).attr('href');
-                const tex = $(element).text();
-                if (tex != 'Shop All') {
-                    if (sul.includes('https')) {
-                        allUrls.push({ url: sul, website: "homedepot" });
-                    } else {
-                        var add = "https://www.homedepot.com";
-                        var urlsv = add.concat(sul);
-                        allUrls.push({ url: urlsv, website: "homedepot" });
-                    };
-                };
-            });
+        if (url.includes('Flooring')) {
+            allUrls.push(url);
             callback();
-        });
-    }
-});
+        } else if (url.includes('Home-Decor-Wall-Decor')) { callback(); } else {
+            request(url, function(err, resp, body) {
+                if (err) callback(err);
+                const $ = cheerio.load(body);
+                $(SELECTOR_1).each(function(i, element) {
+                    const sul = $(element).attr('href');
+                    const tex = $(element).text();
+                    if (sul.includes('https://www.homedepot.com/c/')) {
 
+                        request(sul, function(err, resp, body) {
+                            if (err) callback(err);
+                            const $ = cheerio.load(body);
+                            $(SELECTOR_2).each(function(i, element) {
+                                const suli = $(element).attr('href');
+                                const texa = $(element).text();
+                                if (texa != 'Shop All') {
+                                    if (suli.includes('https')) {
+                                        allUrls.push({ url: sul, website: "homedepot" });
+                                
+                                    } else {
+                                        var add = "https://www.homedepot.com";
+                                        var urlsv = add.concat(suli);
+                                        allUrls.push({ url: urlsv, website: "homedepot" });
+                                        
+                                    };
+                                };
+                            });
+                        });
+                        return;
+                    } else {
+                        if (tex != 'Shop All') {
+                            if (sul.includes('https')) {
+                                allUrls.push({ url: sul, website: "homedepot" });
+                               
+                            } else {
+                                var add = "https://www.homedepot.com";
+                                var urlsv = add.concat(sul);
+                                allUrls.push({ url: urlsv, website: "homedepot" });
+                              
+                            };
+                        };
+                    };
+
+
+                });
+
+                callback();
+            });
+        };
+    };
+});
 
 function checkValidUrl($elemen) {
     if ($elemen.includes('https')) {
